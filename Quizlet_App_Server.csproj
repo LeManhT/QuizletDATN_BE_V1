@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Config\" />
     <Folder Include="Properties\PublishProfiles\" />
     <Folder Include="Src\Controllers\Helper\" />
     <Folder Include="Src\Controllers\OtherFeature\RankSystem\" />
