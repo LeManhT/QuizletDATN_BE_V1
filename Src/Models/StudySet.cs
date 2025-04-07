@@ -2,7 +2,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using Quizlet_App_Server.Utility;
 
-namespace Quizlet_App_Server.Models
+namespace Quizlet_App_Server.Src.Models
 {
     [BsonIgnoreExtraElements]
     public class StudySet
@@ -17,7 +17,8 @@ namespace Quizlet_App_Server.Models
         [BsonElement("id_folder_owner")] public string IdFolderOwner { get; set; } = string.Empty;
         [BsonElement("is_public")] public bool IsPublic { get; set; } = false;
         [BsonElement("description")] public string Description { get; set; } = string.Empty;
-        [BsonElement("count_term")] public int CountTerm
+        [BsonElement("count_term")]
+        public int CountTerm
         {
             get
             {
@@ -29,30 +30,30 @@ namespace Quizlet_App_Server.Models
         public StudySet() { }
         public StudySet(string idOwner, StudySetDTO dto)
         {
-            this.IdOwner = idOwner;
-            this.Name = dto.Name;
-            this.IdFolderOwner = dto.IdFolderOwner;
-            this.IsPublic = dto.IsPublic;
-            this.Description = dto.Description;
+            IdOwner = idOwner;
+            Name = dto.Name;
+            IdFolderOwner = dto.IdFolderOwner;
+            IsPublic = dto.IsPublic;
+            Description = dto.Description;
             if (dto.AllNewCards != null && dto.AllNewCards.Count > 0)
             {
-                this.Cards = new();
+                Cards = new();
                 foreach (FlashCardDTO cardDTO in dto.AllNewCards)
                 {
-                    cardDTO.IdSetOwner = this.Id;
+                    cardDTO.IdSetOwner = Id;
                     Cards.Add(new FlashCard(cardDTO));
                 }
             }
         }
         public StudySet Clone(string newId = null)
         {
-            StudySet setClone = this.MemberwiseClone() as StudySet;
+            StudySet setClone = MemberwiseClone() as StudySet;
 
-            if(newId != null)
+            if (newId != null)
             {
                 setClone.Id = newId;
                 List<FlashCard> newListCard = new List<FlashCard>();
-                foreach(var card in Cards)
+                foreach (var card in Cards)
                 {
                     var cardClone = card.Clone(ObjectId.GenerateNewId().ToString());
                     cardClone.IdSetOwner = newId;
@@ -66,21 +67,21 @@ namespace Quizlet_App_Server.Models
         }
         public void AddNewCard(FlashCardDTO cardDTO)
         {
-            cardDTO.IdSetOwner = this.Id;
+            cardDTO.IdSetOwner = Id;
             Cards.Add(new FlashCard(cardDTO));
         }
         public void UpdateInfo(StudySetDTO dto)
         {
-            this.Id = this.Id;
-            this.TimeCreated = this.TimeCreated;
-            this.Name = dto.Name;
-            this.IdFolderOwner = dto.IdFolderOwner;
-            this.IsPublic = dto.IsPublic;
-            this.Description = dto.Description;
+            Id = Id;
+            TimeCreated = TimeCreated;
+            Name = dto.Name;
+            IdFolderOwner = dto.IdFolderOwner;
+            IsPublic = dto.IsPublic;
+            Description = dto.Description;
         }
     }
 
-    [System.Serializable]
+    [Serializable]
     public class StudySetDTO
     {
         public string Id { get; set; } = string.Empty;
@@ -91,13 +92,13 @@ namespace Quizlet_App_Server.Models
         [BsonElement("all_new_cards")] public List<FlashCardDTO> AllNewCards { get; set; } = new List<FlashCardDTO>();
     }
 
-    [System.Serializable]
+    [Serializable]
     public class StudySetShareView
     {
         public string IdOwner { get; set; } = string.Empty;
         public string NameOwner { get; set; } = string.Empty;
         //public string AvatarOwner { get; set;} = string.Empty;
-        public List<int> AvatarOwner { get; set;} = new List<int>();
+        public List<int> AvatarOwner { get; set; } = new List<int>();
         public string Name { get; set; } = string.Empty;
         public long TimeCreated { get; set; } = TimeHelper.UnixTimeNow;
         public int? CountTerm { get => Cards != null ? Cards.Count : 0; }

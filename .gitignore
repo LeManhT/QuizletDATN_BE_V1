@@ -1,4 +1,4 @@
-# Folders
+﻿# Folders
 artifacts/
 bin/
 obj/
@@ -13,7 +13,10 @@ BenchmarkDotNet.Artifacts/
 src/SignalR/clients/**/dist/
 modules/
 .ionide/
-
+# Các file chứa cấu hình nhạy cảm
+appsettings.local.json
+appsettings.json
+appsettings.Development.json
 # File extensions
 *.aps
 *.binlog
@@ -45,3 +48,4 @@ UpgradeLog.htm
 .idea
 mono_crash.*.json
 mono_crash.*.blob
+appsettings.json

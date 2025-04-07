@@ -1,6 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 
-namespace Quizlet_App_Server.Models
+namespace Quizlet_App_Server.Src.Models
 {
     [BsonIgnoreExtraElements]
     public class Task
@@ -9,7 +9,8 @@ namespace Quizlet_App_Server.Models
         [BsonElement("task_name")] public string? TaskName { get; set; } = string.Empty;
         [BsonElement("type")] public string? Type { get; set; } = TaskType.None;
         [BsonElement("score")] public int? Score { get; set; } = 1;
-        [BsonElement("status")] public TaskStatus Status 
+        [BsonElement("status")]
+        public TaskStatus Status
         {
             get
             {

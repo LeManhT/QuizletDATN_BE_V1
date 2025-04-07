@@ -1,16 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using Quizlet_App_Server.DataSettings;
-using Quizlet_App_Server.Models;
 using Quizlet_App_Server.Services;
+using Quizlet_App_Server.Src.Models;
 using Quizlet_App_Server.Src.Services;
 using Quizlet_App_Server.Utility;
 
-namespace Quizlet_App_Server.Controllers
+namespace Quizlet_App_Server.Src.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public class StudySetPublicController: ControllerBase
+    public class StudySetPublicController : ControllerBase
     {
         protected readonly SetPublicService service;
         public StudySetPublicController(IMongoClient mongoClient, IConfiguration config)
@@ -30,7 +30,7 @@ namespace Quizlet_App_Server.Controllers
         public ActionResult<List<StudySetPublic>> GetAll()
         {
             var result = service.GetAll().OrderByDescending(s => s.TimePushed).ToList();
-            
+
             return new ActionResult<List<StudySetPublic>>(result);
         }
 

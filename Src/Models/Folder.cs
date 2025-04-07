@@ -2,7 +2,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using Quizlet_App_Server.Utility;
 
-namespace Quizlet_App_Server.Models
+namespace Quizlet_App_Server.Src.Models
 {
     [BsonIgnoreExtraElements]
     public class Folder
@@ -27,23 +27,23 @@ namespace Quizlet_App_Server.Models
         public Folder() { }
         public Folder(FolderDTO dto)
         {
-            this.Name = dto.Name;
-            this.Description = dto.Description;
-            this.StudySets = dto.StudySets;
+            Name = dto.Name;
+            Description = dto.Description;
+            StudySets = dto.StudySets;
         }
-/*        public void AddNewSet(StudySetDTO newSet)
-        {
-            newSet.IdFolderOwner = this.Id;
-            StudySets.Add(new StudySet(newSet));
-        }*/
+        /*        public void AddNewSet(StudySetDTO newSet)
+                {
+                    newSet.IdFolderOwner = this.Id;
+                    StudySets.Add(new StudySet(newSet));
+                }*/
         public void AddNewSet(StudySet newSet)
         {
-            newSet.IdFolderOwner = this.Id;
+            newSet.IdFolderOwner = Id;
             StudySets.Add(newSet);
         }
     }
 
-    [System.Serializable]
+    [Serializable]
     public class FolderDTO
     {
         [BsonElement("name")] public string Name { get; set; } = string.Empty;
@@ -51,7 +51,7 @@ namespace Quizlet_App_Server.Models
         [BsonElement("study_sets")] public List<StudySet>? StudySets { get; set; } = new List<StudySet>();
     }
 
-    [System.Serializable]
+    [Serializable]
     public class FolderShareView
     {
         public string IdOwner = string.Empty;

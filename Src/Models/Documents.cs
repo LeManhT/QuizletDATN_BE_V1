@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace Quizlet_App_Server.Models
+namespace Quizlet_App_Server.Src.Models
 {
     [BsonIgnoreExtraElements]
     public class Documents
@@ -33,7 +33,7 @@ namespace Quizlet_App_Server.Models
             }
 
             allCards.AddRange(allCards);
-            allCards.AddRange(this.FlashCards);
+            allCards.AddRange(FlashCards);
 
             return allCards;
         }
@@ -53,15 +53,15 @@ namespace Quizlet_App_Server.Models
         }
         public Folder GetFolderOwnerOfSet(string idSet)
         {
-            foreach(StudySet set in StudySets)
+            foreach (StudySet set in StudySets)
             {
                 if (set.Id.Equals(idSet))
                     return null;
             }
 
-            foreach(Folder folder in Folders)
+            foreach (Folder folder in Folders)
             {
-                if(folder.StudySets.Any(set => set.Id.Equals(idSet)))
+                if (folder.StudySets.Any(set => set.Id.Equals(idSet)))
                     return folder;
             }
 

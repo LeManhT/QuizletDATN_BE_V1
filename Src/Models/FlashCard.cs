@@ -2,7 +2,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using Quizlet_App_Server.Utility;
 
-namespace Quizlet_App_Server.Models
+namespace Quizlet_App_Server.Src.Models
 {
     [BsonIgnoreExtraElements]
     public class FlashCard
@@ -20,17 +20,17 @@ namespace Quizlet_App_Server.Models
         public FlashCard() { }
         public FlashCard(FlashCardDTO dto)
         {
-            this.Term = dto.Term;
-            this.Definition= dto.Definition;
-            this.IdSetOwner= dto.IdSetOwner;
-            this.PathImage = dto.PathImage;
+            Term = dto.Term;
+            Definition = dto.Definition;
+            IdSetOwner = dto.IdSetOwner;
+            PathImage = dto.PathImage;
         }
 
         public FlashCard Clone(string newId = null)
         {
-            FlashCard cardClone = this.MemberwiseClone() as FlashCard;
+            FlashCard cardClone = MemberwiseClone() as FlashCard;
 
-            if(newId != null)
+            if (newId != null)
             {
                 cardClone.Id = newId;
             }
@@ -39,11 +39,11 @@ namespace Quizlet_App_Server.Models
         }
         public void UpdateInfo(FlashCardDTO cardDTO)
         {
-            this.Id = this.Id;                      // not update id
-            this.TimeCreated = this.TimeCreated;    // not update time created
-            this.Term = cardDTO.Term;
-            this.Definition = cardDTO.Definition;
-            this.IdSetOwner = cardDTO.IdSetOwner;
+            Id = Id;                      // not update id
+            TimeCreated = TimeCreated;    // not update time created
+            Term = cardDTO.Term;
+            Definition = cardDTO.Definition;
+            IdSetOwner = cardDTO.IdSetOwner;
         }
     }
 

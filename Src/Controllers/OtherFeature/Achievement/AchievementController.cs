@@ -2,8 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Quizlet_App_Server.DataSettings;
-using Quizlet_App_Server.Models;
-using Quizlet_App_Server.Models.Helper;
+using Quizlet_App_Server.Src.Models;
 using Quizlet_App_Server.Utility;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -24,7 +23,7 @@ namespace Quizlet_App_Server.Controllers
             this.client = mongoClient;
         }
         [HttpPost]
-        public ActionResult WriteConfig([FromBody] List<Models.Task> listTask)
+        public ActionResult WriteConfig([FromBody] List<Src.Models.Task> listTask)
         {
             string nameConfig = "Achievement";
             var filter = Builders<Achievement>.Filter.Eq(x => x.SpecialName, nameConfig);

@@ -1,5 +1,4 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
-using Quizlet_App_Server.Models;
 
 namespace Quizlet_App_Server.Src.Models.OtherFeature.RankSystem
 {

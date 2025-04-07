@@ -1,4 +1,4 @@
-using FirebaseAdmin;
+﻿using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,9 +10,14 @@ using Newtonsoft.Json;
 using Quizlet_App_Server.DataSettings;
 using Quizlet_App_Server.Models;
 using Quizlet_App_Server.Src.DataSettings;
+using Quizlet_App_Server.Src;
+using Quizlet_App_Server.Src.Features.ChatBot.Services;
+using Quizlet_App_Server.Src.Features.Payment.Service;
+using Quizlet_App_Server.Src.Features.Social.Service;
 using Quizlet_App_Server.Src.Models.OtherFeature.Cipher;
 using Quizlet_App_Server.Utility;
 using System.Text;
+using Quizlet_App_Server.Services;
 
 Console.WriteLine($"Start {VariableConfig.IdPublish}");
 var builder = WebApplication.CreateBuilder(args);
@@ -47,7 +52,17 @@ builder.Services.AddSingleton<IMongoClient>(
                             s => new MongoClient(appConfigResource.UserStoreDatabaseSetting.ConnectionString));
 #endregion
 
-
+builder.Logging.ClearProviders(); // Xóa các providers mặc định
+builder.Logging.AddConsole().AddDebug(); // Thêm console logger
+builder.Services.AddScoped<MomoPaymentService>();
+// Đăng ký ChatBotService
+builder.Services.AddScoped<ChatBotService>();
+builder.Services.AddScoped<MessageService>();
+builder.Services.AddScoped<PostService>();
+builder.Services.AddSingleton<S3Service>();
+builder.Services.AddSingleton<FriendService>();
+builder.Services.AddScoped<ChatHistoryService>();
+builder.Services.AddScoped<UserService>();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -95,19 +110,63 @@ builder.Services.AddAuthentication(options =>
     };
 });
 #endregion
+
+
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", policy =>
+    {
+        policy.WithOrigins(
+            "http://127.0.0.1:5500",         // Nếu dùng trình duyệt trên máy cục bộ
+            "http://10.0.2.2:5500",          // Trình giả lập Android
+            "http://192.168.1.100:5500" // IP của máy chủ trong mạng LAN
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials(); // Hỗ trợ credentials
+    });
+});
+
+
+// Thêm SignalR
+builder.Services.AddSignalR();
+
 var app = builder.Build();
+app.UseCors("AllowSpecificOrigin");
+
+//builder.Logging.ClearProviders(); 
+builder.Logging.AddConsole().AddDebug();
+
+app.UseRouting();
+
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
 //{
-    app.UseSwagger();
+app.UseSwagger();
     app.UseSwaggerUI();
 //}
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Quizlet App Server v1");
+    c.RoutePrefix = string.Empty; // Đặt Swagger UI tại URL gốc
+});
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapHub<ChatHub>("/chatHub");
+    endpoints.MapHub<PostHub>("/postHub");
+    endpoints.MapHub<FriendHub>("/friendHub");
+});
 
 app.MapControllers();
 

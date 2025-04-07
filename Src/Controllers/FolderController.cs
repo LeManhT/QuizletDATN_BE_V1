@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
-using Quizlet_App_Server.Controllers;
 using Quizlet_App_Server.DataSettings;
-using Quizlet_App_Server.Models;
 using Quizlet_App_Server.Services;
 using Quizlet_App_Server.Src.DataSettings;
+using Quizlet_App_Server.Src.Models;
 
 namespace Quizlet_App_Server.Src.Controllers
 {
@@ -48,7 +47,7 @@ namespace Quizlet_App_Server.Src.Controllers
             {
                 return NotFound("User not found");
             }
-            else if(userExisting.Documents.Folders.Any(folder => folder.Name.Equals(req.Name)))
+            else if (userExisting.Documents.Folders.Any(folder => folder.Name.Equals(req.Name)))
             {
                 return BadRequest("Has exist other folder same name");
             }
@@ -69,13 +68,13 @@ namespace Quizlet_App_Server.Src.Controllers
             {
                 return NotFound("User not found");
             }
-            else if(userExisting.Documents.Folders.Count <= 0 
+            else if (userExisting.Documents.Folders.Count <= 0
                 || !userExisting.Documents.Folders.Any(folder => folder.Id.Equals(folderId)))
             {
                 return BadRequest("Not found folder in user's document");
             }
 
-            if(userExisting.Documents.Folders.Any(folder => folder.Name.Equals(req.Name)))
+            if (userExisting.Documents.Folders.Any(folder => folder.Name.Equals(req.Name)))
             {
                 return BadRequest("Has exist other folder same name");
             }
@@ -106,7 +105,7 @@ namespace Quizlet_App_Server.Src.Controllers
             }
 
             List<StudySet> tempList = new List<StudySet>();
-            foreach(var s in newSets)
+            foreach (var s in newSets)
             {
                 if (s.Id.IsNullOrEmpty())
                 {

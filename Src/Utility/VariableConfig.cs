@@ -4,7 +4,7 @@
     {
         public const int MaxTryLogin = 5;
         public const int BaseScore = 5;
-        public const string DatabaseName = "QuizletApp";
+        public const string DatabaseName = "AppQuizlet";
         public const string Collection_Users = "users";
         public const string Collection_UserSequence = "UserSequence";
         public const string Collection_Configure = "Configure";

@@ -2,23 +2,23 @@
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Quizlet_App_Server.DataSettings;
-using Quizlet_App_Server.Models;
 using Quizlet_App_Server.Services;
 using Quizlet_App_Server.Src.DataSettings;
+using Quizlet_App_Server.Src.Models;
 using Quizlet_App_Server.Src.Utility;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace Quizlet_App_Server
+namespace Quizlet_App_Server.Src.Services
 {
     public class JwtService
     {
         protected readonly UserService userService;
         private readonly IConfiguration config;
         private AppConfigResource setting;
-        public JwtService(UserService userService, IConfiguration config, AppConfigResource setting) 
-        { 
+        public JwtService(UserService userService, IConfiguration config, AppConfigResource setting)
+        {
             this.userService = userService;
             this.config = config;
             this.setting = setting;
@@ -47,7 +47,7 @@ namespace Quizlet_App_Server
                 verifyLoginResult = VerifyLoginResult.SuspendTemp;
                 return null;
             }
-            else if(existingUser.TryLoginCount <= 0)
+            else if (existingUser.TryLoginCount <= 0)
             {
                 userService.ResetLoginCount(ref existingUser);
             }

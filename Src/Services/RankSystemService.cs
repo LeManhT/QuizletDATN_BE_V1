@@ -1,6 +1,6 @@
 ﻿using MongoDB.Driver;
-using Quizlet_App_Server.Models;
 using Quizlet_App_Server.Services;
+using Quizlet_App_Server.Src.Models;
 using Quizlet_App_Server.Src.Models.OtherFeature.RankSystem;
 using Quizlet_App_Server.Utility;
 

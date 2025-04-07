@@ -6,14 +6,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Quizlet_App_Server.DataSettings;
-using Quizlet_App_Server.Models;
 using Quizlet_App_Server.Services;
 using Quizlet_App_Server.Src.DataSettings;
+using Quizlet_App_Server.Src.Models;
 using Quizlet_App_Server.Utility;
 using System.Net;
-using User = Quizlet_App_Server.Models.User;
+using User = Quizlet_App_Server.Src.Models.User;
 
-namespace Quizlet_App_Server.Controllers
+namespace Quizlet_App_Server.Src.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
@@ -24,7 +24,7 @@ namespace Quizlet_App_Server.Controllers
         public CardController(AppConfigResource setting
                             , IMongoClient mongoClient
                             , IConfiguration config
-                            , IWebHostEnvironment webHostEnvironment) 
+                            , IWebHostEnvironment webHostEnvironment)
             : base(setting, mongoClient)
         {
             userService = new(mongoClient, config);
@@ -47,7 +47,7 @@ namespace Quizlet_App_Server.Controllers
             FlashCard newCard = new(cardReq);
 
             StudySet setOwner = existingUser.Documents.StudySets.Find(x => x.Id == cardReq.IdSetOwner);
-            if(setOwner != null)
+            if (setOwner != null)
             {
                 newCard.IdSetOwner = setOwner.Id;
             }
@@ -114,8 +114,8 @@ namespace Quizlet_App_Server.Controllers
 
             // find and remove card in document
             FlashCard cardRequire = existingUser.Documents.GetAllCards().Find(card => card.Id.Equals(cardId));
-            
-            if(cardRequire == null)
+
+            if (cardRequire == null)
             {
                 return NotFound("Not found card");
             }

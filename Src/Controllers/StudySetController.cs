@@ -3,13 +3,12 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Quizlet_App_Server.DataSettings;
-using Quizlet_App_Server.Models;
 using Quizlet_App_Server.Services;
 using Quizlet_App_Server.Src.DataSettings;
 using Quizlet_App_Server.Src.Services;
-using Quizlet_App_Server.Utility;
+using Quizlet_App_Server.Src.Models;
 
-namespace Quizlet_App_Server.Controllers
+namespace Quizlet_App_Server.Src.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
@@ -17,7 +16,7 @@ namespace Quizlet_App_Server.Controllers
     {
         protected readonly UserService userService;
         protected readonly SetPublicService setPublicService;
-        public StudySetController(AppConfigResource setting, IMongoClient mongoClient, IConfiguration config) 
+        public StudySetController(AppConfigResource setting, IMongoClient mongoClient, IConfiguration config)
             : base(setting, mongoClient)
         {
             userService = new(mongoClient, config);
@@ -28,13 +27,13 @@ namespace Quizlet_App_Server.Controllers
         {
             var user = userService.FindById(userId);
 
-            if(user == null)
+            if (user == null)
             {
                 return NotFound("User not found");
             }
 
             var setInfo = user.Documents.GetAllSets().Find(s => s.Id.Equals(setId));
-            if(setInfo == null)
+            if (setInfo == null)
             {
                 return NotFound("Set not found in user's document");
             }
@@ -47,7 +46,7 @@ namespace Quizlet_App_Server.Controllers
         public ActionResult<UserRespone> Create(string userId, [FromBody] StudySetDTO req)
         {
             User userExisting = userService.FindById(userId);
-            if(userExisting == null)
+            if (userExisting == null)
             {
                 return NotFound("User not found");
             }
@@ -56,7 +55,7 @@ namespace Quizlet_App_Server.Controllers
 
             StudySet newSet = new(userId, req);
 
-            if(folderOwner != null && folderOwner.Id.Equals(req.IdFolderOwner))
+            if (folderOwner != null && folderOwner.Id.Equals(req.IdFolderOwner))
             {
                 if (folderOwner.StudySets.Any(set => set.Name.Equals(req.Name)))
                 {
@@ -70,7 +69,7 @@ namespace Quizlet_App_Server.Controllers
             else
             {
                 // study set in outside
-                if(userExisting.Documents.StudySets.Any(set => set.Name.Equals(req.Name)))
+                if (userExisting.Documents.StudySets.Any(set => set.Name.Equals(req.Name)))
                 {
                     return BadRequest("Has exist other study set same name in here");
                 }
@@ -88,16 +87,16 @@ namespace Quizlet_App_Server.Controllers
             userService.UpdateCollectionStorage(userExisting);
 
             var task = userExisting.Achievement.TaskList.Find(t => t.Id == 204);
-            if(task != null && userExisting.CollectionStorage.CreateSetCount == 1)
+            if (task != null && userExisting.CollectionStorage.CreateSetCount == 1)
             {
-                bool wasCompleted = task.Status >=  Models.TaskStatus.Completed;
-                task.Progress ++;
+                bool wasCompleted = task.Status >= Models.TaskStatus.Completed;
+                task.Progress++;
                 userService.UpdateAchievement(userId, userExisting.Achievement);
 
                 if (!wasCompleted && task.Status >= Models.TaskStatus.Completed)
                     //userService.UpdateScore(userExisting, task.Score ?? 0);
                     userService.CompleteNewTask(userExisting, task.Id ?? -1);
-                    
+
             }
             //--
 
@@ -114,7 +113,7 @@ namespace Quizlet_App_Server.Controllers
             }
 
             StudySet studySet = userExisting.Documents.GetAllSets().Find(s => s.Id.Equals(setId));
-            if(studySet == null)
+            if (studySet == null)
             {
                 return NotFound("Study set not found in user's document");
             }
@@ -158,12 +157,12 @@ namespace Quizlet_App_Server.Controllers
             }
 
             StudySet set = userExisting.Documents.GetAllSets().Find(s => s.Id.Equals(setId));
-            if(set == null)
+            if (set == null)
             {
                 return NotFound("Set not found in user's document");
             }
 
-            foreach(var folder in userExisting.Documents.Folders)
+            foreach (var folder in userExisting.Documents.Folders)
             {
                 if (listIdFolders.Contains(folder.Id))
                 {
@@ -176,7 +175,7 @@ namespace Quizlet_App_Server.Controllers
 
             var result = userService.UpdateDocumentsUser(userExisting);
 
-            return new ActionResult<User>(result);  
+            return new ActionResult<User>(result);
         }
 
         [HttpPut]
@@ -195,7 +194,7 @@ namespace Quizlet_App_Server.Controllers
 
             StudySet setUpdating = userExisting.Documents.GetAllSets().Find(set => set.Id.Equals(setId));
 
-            if(setUpdating == null)
+            if (setUpdating == null)
             {
                 return BadRequest("Set not found");
             }
@@ -206,7 +205,7 @@ namespace Quizlet_App_Server.Controllers
             setUpdating.IsPublic = req.IsPublic;
 
             List<FlashCard> tempCards = new List<FlashCard>();
-            foreach(var card in req.AllNewCards)
+            foreach (var card in req.AllNewCards)
             {
                 if (card.Id.IsNullOrEmpty())
                 {

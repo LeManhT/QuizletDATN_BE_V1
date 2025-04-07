@@ -1,6 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
-using Quizlet_App_Server.Models;
+using Quizlet_App_Server.Src.Models;
 using Quizlet_App_Server.Utility;
 
 namespace Quizlet_App_Server.Src.Services

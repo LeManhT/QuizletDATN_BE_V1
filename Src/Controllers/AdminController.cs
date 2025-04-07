@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
-using Quizlet_App_Server.Models;
+using Quizlet_App_Server.Src.Models;
 using Quizlet_App_Server.Src.Models.OtherFeature.Notification;
 using Quizlet_App_Server.Src.Services;
 using Quizlet_App_Server.Utility;

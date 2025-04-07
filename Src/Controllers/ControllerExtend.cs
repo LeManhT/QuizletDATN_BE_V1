@@ -4,9 +4,9 @@ using Quizlet_App_Server.DataSettings;
 using Quizlet_App_Server.Services;
 using Quizlet_App_Server.Src.DataSettings;
 
-namespace Quizlet_App_Server.Controllers
+namespace Quizlet_App_Server.Src.Controllers
 {
-    public class ControllerExtend<T>: ControllerBase
+    public class ControllerExtend<T> : ControllerBase
     {
         protected readonly AppConfigResource setting;
         protected readonly IMongoDatabase database;
@@ -17,7 +17,7 @@ namespace Quizlet_App_Server.Controllers
             database = mongoClient.GetDatabase(setting.UserStoreDatabaseSetting.DatabaseName);
             collection = database.GetCollection<T>(setting.UserStoreDatabaseSetting.CollectionName);
 
-            this.client = mongoClient;
+            client = mongoClient;
             this.setting = setting;
         }
     }

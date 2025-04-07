@@ -4,6 +4,8 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Quizlet_App_Server.Models;
 using Quizlet_App_Server.Models.Helper;
+using Quizlet_App_Server.Src.Features.Social.Models;
+using Quizlet_App_Server.Src.Models;
 using Quizlet_App_Server.Src.Models.OtherFeature.Cipher;
 using Quizlet_App_Server.Utility;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,6 +18,7 @@ namespace Quizlet_App_Server.Services
     public class UserService
     {
         protected readonly IMongoCollection<User> collection;
+        protected readonly IMongoCollection<Friend> _friendCollection;
         protected readonly IMongoClient client;
         private readonly IConfiguration config;
 
@@ -25,10 +28,43 @@ namespace Quizlet_App_Server.Services
         {
             var database = mongoClient.GetDatabase(VariableConfig.DatabaseName);
             collection = database.GetCollection<User>(VariableConfig.Collection_Users);
+            _friendCollection = database.GetCollection<Friend>("friends");
 
             this.client = mongoClient;
             this.config = config;
         }
+
+
+        //public async Task<List<User>> GetSuggestedFriendsAsync(string userId)
+        //{
+        //    var user = await collection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        //    if (user == null)
+        //    {
+        //        return new List<User>();
+        //    }
+
+        //    var friendIds = user.Friends;
+        //    var suggestedFriends = await collection.Find(u => !friendIds.Contains(u.Id) && u.Id != userId).ToListAsync();
+
+        //    return suggestedFriends;
+        //}
+
+        public async Task<List<User>> GetSuggestedFriendsAsync(string userId)
+        {
+            // Tìm danh sách bạn bè của user từ bảng Friend
+            var friends = await _friendCollection.Find(f => f.UserIds.Contains(userId)).ToListAsync();
+
+            // Lấy danh sách ID bạn bè (loại bỏ userId)
+            var friendIds = friends.SelectMany(f => f.UserIds).Where(id => id != userId).ToHashSet();
+
+            // Lọc danh sách gợi ý (không phải bạn bè và không phải chính user)
+            var suggestedFriends = await collection
+                .Find(u => !friendIds.Contains(u.Id) && u.Id != userId)
+                .ToListAsync();
+
+            return suggestedFriends;
+        }
+
 
         public int GetNextID()
         {
@@ -145,7 +181,7 @@ namespace Quizlet_App_Server.Services
         }
         public User CompleteNewTask(User existingUser, int taskId)
         {
-            Models.Task task = existingUser.Achievement.TaskList.Find(t => t.Id== taskId);
+            Src.Models.Task task = existingUser.Achievement.TaskList.Find(t => t.Id== taskId);
             if (task == null) return null;
 
             existingUser.CompleteNewTask(task);
@@ -161,6 +197,7 @@ namespace Quizlet_App_Server.Services
 
             return result;
         }
+
         public User UpdateScore(string userId, int score)
         {
             var filter = Builders<User>.Filter.Eq(x => x.Id, userId);
@@ -191,6 +228,21 @@ namespace Quizlet_App_Server.Services
 
             return result;
         }
+        public async Task<List<StudySet>> FindStudySetsByTextAsync(string text)
+        {
+            var filter = Builders<User>.Filter.ElemMatch(user => user.Documents.StudySets,
+                studySet => studySet.Name.ToLower().Contains(text.ToLower()) ||
+                            studySet.Description.ToLower().Contains(text.ToLower()));
+
+            var users = await collection.Find(filter).ToListAsync();
+
+            return users.SelectMany(user => user.Documents.StudySets
+                .Where(studySet =>
+                    studySet.Name.ToLower().Contains(text.ToLower()) ||
+                    studySet.Description.ToLower().Contains(text.ToLower()))
+            ).ToList();
+        }
+
         public InfoPersonal UpdateInfoUser(string userId, string aesKey, InfoPersonal newInfo)
         {
             var updateDefinitionList = new List<UpdateDefinition<User>>();
@@ -298,7 +350,7 @@ namespace Quizlet_App_Server.Services
 
             if (configAchievement.Version > currentAchievement.Version)
             {
-                List<Models.Task> newTasks = new List<Models.Task>();
+                List<Src.Models.Task> newTasks = new List<Src.Models.Task>();
 
                 foreach (var configTask in configAchievement.TaskList)
                 {
