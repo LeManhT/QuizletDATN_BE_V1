@@ -16,7 +16,6 @@ modules/
 # Các file chứa cấu hình nhạy cảm
 appsettings.local.json
 appsettings.json
-appsettings.Development.json
 # File extensions
 *.aps
 *.binlog
