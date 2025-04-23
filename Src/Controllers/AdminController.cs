@@ -86,7 +86,7 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")] // Chỉ Admin được truy cập
+        [Authorize(Roles = "Admin")]
         public ActionResult<List<User>> GetUsers(int from, int to)
         {
             if (to < from)
@@ -99,7 +99,7 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")] // Chỉ Admin được truy cập
+        [Authorize(Roles = "Admin")]
         public ActionResult<Dictionary<string, int>> GetChartUsersCreateByMonth()
         {
             try
@@ -123,7 +123,7 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")] // Chỉ Admin được truy cập
+        [Authorize(Roles = "Admin")]
         public ActionResult SetSuspendUser(string userID, bool suspend)
         {
             bool updated = service.SetSuspendUser(userID, suspend);
@@ -137,7 +137,7 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")] // Chỉ Admin được truy cập
+        [Authorize(Roles = "Admin")]
         public ActionResult PingNoticeUser(string userID, Notification notice)
         {
             var updateResult = service.PingNoticeUser(userID, notice);
@@ -151,7 +151,7 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")] // Chỉ Admin được truy cập
+        [Authorize(Roles = "Admin")]
         public ActionResult PingNoticeForAllUsers(Notification notice)
         {
             var updateResult = service.PingNoticeAllUsers(notice);
@@ -165,7 +165,7 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpDelete]
-        [Authorize(Roles = "Admin")] // Chỉ Admin được truy cập
+        [Authorize(Roles = "Admin")]
         public ActionResult DeleteUser(string userID)
         {
             var deleteResult = service.DeleteUser(userID);
