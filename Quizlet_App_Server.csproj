@@ -4,6 +4,9 @@
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+	<GenerateProgramFile>false</GenerateProgramFile>
+<AssemblyName>QuizletAppServerTemp</AssemblyName>
+
   </PropertyGroup>
 
   <ItemGroup>
