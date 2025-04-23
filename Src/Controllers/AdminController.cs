@@ -36,7 +36,7 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous] // Cho phép truy cập không cần JWT
+        [AllowAnonymous]
         public ActionResult<Admin> SignUp([FromBody] AdminSignUp request)
         {
             Admin newAccount = new Admin()
@@ -60,7 +60,7 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous] // Cho phép truy cập không cần JWT
+        [AllowAnonymous]
         public IActionResult Login([FromBody] LoginRequest request)
         {
             if (string.IsNullOrEmpty(request.LoginName) || string.IsNullOrEmpty(request.Password))
