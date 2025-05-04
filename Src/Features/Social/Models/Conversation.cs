@@ -4,11 +4,11 @@ using Quizlet_App_Server.Utility;
 
 namespace Quizlet_App_Server.Src.Features.Social.Models
 {
-    public class Conversation
+    public record Conversation
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string ConversationId { get; set; } = ObjectId.GenerateNewId().ToString();
+        public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("name")]
         public string? Name { get; set; }
@@ -16,8 +16,8 @@ namespace Quizlet_App_Server.Src.Features.Social.Models
         [BsonElement("type")]
         public string Type { get; set; } = "personal";
 
-        [BsonElement("participants")]
-        public List<string> Members { get; set; } = new List<string>();
+        [BsonElement("members")]
+        public List<GroupMember> Members { get; set; } = new List<GroupMember>();
 
         [BsonElement("admins")]
         public List<string> Admins { get; set; } = new List<string>();
@@ -25,11 +25,16 @@ namespace Quizlet_App_Server.Src.Features.Social.Models
         [BsonElement("last_message")]
         public string? LastMessage { get; set; }
 
+        public int ParticipantCount { get; init; } = 0;
+
         [BsonElement("last_message_time")]
         public long LastMessageTime { get; set; } = TimeHelper.UnixTimeNow;
 
         [BsonElement("is_deleted")]
         public bool IsDeleted { get; set; } = false;
+
+        [BsonElement("is_active")]
+        public bool IsActive { get; set; } = true;
 
         [BsonElement("created_at")]
         public long CreatedAt { get; set; } = TimeHelper.UnixTimeNow;

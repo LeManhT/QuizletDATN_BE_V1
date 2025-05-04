@@ -11,7 +11,9 @@ namespace Quizlet_App_Server.Src.Features.Social.Models
         public string MessageId { get; set; } = ObjectId.GenerateNewId().ToString();
 
         [BsonElement("sender_id")]
-        public string SenderId { get; set; } = string.Empty; 
+        public string SenderId { get; set; } = string.Empty;
+        [BsonElement("group_id")]
+        public string GroupId { get; set; }
 
         [BsonElement("receiver_id")]
         public string ReceiverId { get; set; } = string.Empty; 
@@ -60,6 +62,7 @@ namespace Quizlet_App_Server.Src.Features.Social.Models
         public string Name { get; set; }
         public string CreatorId { get; set; }
         public string? Description { get; set; }
+        public List<GroupMember> Members { get; set; } = new List<GroupMember>();
         public string? GroupAvatar { get; set; }
         public bool IsPublic { get; set; } = false;
         public int? MaxMembers { get; set; }

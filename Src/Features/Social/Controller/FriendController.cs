@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Quizlet_App_Server.Src.Features.Social.Service;
+using Quizlet_App_Server.Src.Models;
 
 namespace Quizlet_App_Server.Src.Features.Social.Controller {
     [Route("api/[controller]/[action]")]
@@ -48,10 +49,18 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller {
 
         /// Lấy danh sách bạn bè của người dùng
         [HttpGet]
-        public async Task<IActionResult> GetFriends([FromQuery] string userId)
+        public async Task<ActionResult<List<UserRespone>>> GetUserFriends(string userId)
         {
-        var friends = await _friendService.GetFriendsAsync(userId);
-        return Ok(new { success = true, friends });
+            try
+            {
+                var friends = await _friendService.GetFriendsAsync(userId);
+                var userResponses = friends.Select(user => new UserRespone(user)).ToList();
+                return Ok(userResponses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Internal server error");
+            }
         }
 
         //[HttpDelete]
