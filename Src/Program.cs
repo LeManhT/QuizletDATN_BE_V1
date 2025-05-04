@@ -18,9 +18,11 @@ using Quizlet_App_Server.Src.Models.OtherFeature.Cipher;
 using Quizlet_App_Server.Utility;
 using System.Text;
 using Quizlet_App_Server.Services;
+using Quizlet_App_Server.Src.Mapping;
 
 Console.WriteLine($"Start {VariableConfig.IdPublish}");
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 AppConfigResource appConfigResource = new();
 
 #region get appconfig resource
@@ -61,6 +63,7 @@ builder.Services.AddScoped<MessageService>();
 builder.Services.AddScoped<PostService>();
 builder.Services.AddSingleton<S3Service>();
 builder.Services.AddSingleton<FriendService>();
+builder.Services.AddScoped<GroupService>();
 builder.Services.AddScoped<ChatHistoryService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddControllers();

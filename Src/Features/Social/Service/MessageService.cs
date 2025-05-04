@@ -89,11 +89,15 @@ namespace Quizlet_App_Server.Src.Features.Social.Service
             await _conversationCollection.InsertOneAsync(conversation);
         }
 
-        public async Task<Conversation> GetConversationAsync(string userId1, string userId2)
+        public async Task<List<Conversation>> GetUserConversationsAsync(string userId)
         {
-        var filter = Builders<Conversation>.Filter.All(c => c.Members, new List<string> { userId1, userId2 });
-             return await _conversationCollection.Find(filter).FirstOrDefaultAsync();
+            var filter = Builders<Conversation>.Filter.ElemMatch(c => c.Members, m => m.UserId == userId);
+            return await _conversationCollection
+                .Find(filter)
+                .SortByDescending(c => c.LastMessageTime)
+                .ToListAsync();
         }
+
 
 
         // Ghim hoặc bỏ ghim tin nhắn
@@ -125,17 +129,22 @@ namespace Quizlet_App_Server.Src.Features.Social.Service
         }
 
         // Lấy danh sách cuộc hội thoại của một người dùng
-        public async Task<List<Conversation>> GetUserConversationsAsync(string userId)
+        public async Task<Conversation> GetConversationAsync(string userId1, string userId2)
         {
-            var filter = Builders<Conversation>.Filter.AnyEq(c => c.Members, userId);
-            return await _conversationCollection.Find(filter).SortByDescending(c => c.LastMessageTime).ToListAsync();
+            var filter = Builders<Conversation>.Filter.And(
+                Builders<Conversation>.Filter.ElemMatch(c => c.Members, m => m.UserId == userId1),
+                Builders<Conversation>.Filter.ElemMatch(c => c.Members, m => m.UserId == userId2),
+                Builders<Conversation>.Filter.Eq(c => c.Type, "personal")
+            );
+
+            return await _conversationCollection.Find(filter).FirstOrDefaultAsync();
         }
 
         // Lấy thông tin conversation theo ID
         public async Task<Conversation?> GetConversationByIdAsync(string conversationId)
         {
             return await _conversationCollection
-                .Find(c => c.ConversationId == conversationId)
+                .Find(c => c.Id == conversationId)
                 .FirstOrDefaultAsync();
         }
 
@@ -148,11 +157,11 @@ namespace Quizlet_App_Server.Src.Features.Social.Service
                     throw new ArgumentNullException(nameof(conversation), "Conversation không được null");
 
                 // Kiểm tra conversation có ID không
-                if (string.IsNullOrWhiteSpace(conversation.ConversationId))
+                if (string.IsNullOrWhiteSpace(conversation.Id))
                     throw new InvalidOperationException("Conversation phải có ID");
 
                 // Tìm conversation theo ID
-                var filter = Builders<Conversation>.Filter.Eq(c => c.ConversationId, conversation.ConversationId);
+                var filter = Builders<Conversation>.Filter.Eq(c => c.Id, conversation.Id);
 
                 // Tạo update builder
                 var updateDefinition = Builders<Conversation>.Update
@@ -177,8 +186,8 @@ namespace Quizlet_App_Server.Src.Features.Social.Service
                 // Kiểm tra kết quả update
                 if (result.ModifiedCount == 0)
                 {
-                    _logger.LogWarning($"Không tìm thấy conversation để cập nhật: {conversation.ConversationId}");
-                    throw new InvalidOperationException($"Không tìm thấy conversation với ID: {conversation.ConversationId}");
+                    _logger.LogWarning($"Không tìm thấy conversation để cập nhật: {conversation.Id}");
+                    throw new InvalidOperationException($"Không tìm thấy conversation với ID: {conversation.Id}");
                 }
             }
             catch (Exception ex)

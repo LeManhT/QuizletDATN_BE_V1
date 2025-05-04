@@ -101,78 +101,89 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
             return Ok(new { ImageUrls = uploadedUrls });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> CheckLikedPosts([FromBody] CheckLikedPostsRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.UserId) || request.PostIds == null || !request.PostIds.Any())
+            {
+                return BadRequest("Invalid request parameters");
+            }
+
+            var likedPostIds = await postService.CheckLikedPostsAsync(request.UserId, request.PostIds);
+            return Ok(likedPostIds);
+        }
+
+        // Add this request model if not already defined
+        public class CheckLikedPostsRequest
+        {
+            public string UserId { get; set; }
+            public List<string> PostIds { get; set; }
+        }
 
         [HttpPost]
         public async Task<ActionResult> LikePost(string userId, string postId)
         {
-            var post = await postService.FindPostByIdAsync(postId);
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(postId))
+            {
+                return BadRequest("User ID and Post ID are required.");
+            }
 
+            var post = await postService.FindPostByIdAsync(postId);
             if (post == null)
             {
                 return NotFound("Post not found");
             }
 
+            // Check if user already liked this post
             if (post.LikedByUsers.Contains(userId))
             {
-                return BadRequest("User already liked this post");
+                return Ok(new { message = "User already liked this post", isLike = true, likes = post.Likes });
             }
-            post.LikedByUsers.Add(userId);
-            post.Likes += 1;
 
-            // Map Post sang PostDTO trước khi cập nhật
-            var updatedPostDTO = new PostDTO
+            // Use the updated service method
+            bool success = await postService.LikePostAsync(postId, userId);
+
+            if (!success)
             {
-                Content = post.Content,
-                CreatedAt = post.CreatedAt,
-                Likes = post.Likes,
-                LikedByUsers = post.LikedByUsers
-            };
-
-            bool isUpdated = await postService.UpdatePostAsync(postId, updatedPostDTO);
-
-            if (!isUpdated)
-            {
-                return StatusCode(500, "Failed to update the post");
+                return StatusCode(500, "Failed to like the post");
             }
+
+            // Fetch the updated post to return the latest like count
+            post = await postService.FindPostByIdAsync(postId);
 
             return Ok(new { message = "Post liked successfully", isLike = true, likes = post.Likes });
         }
 
-
         [HttpPost]
         public async Task<ActionResult> UnlikePost(string userId, string postId)
         {
-            var post = await postService.FindPostByIdAsync(postId);
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(postId))
+            {
+                return BadRequest("User ID and Post ID are required.");
+            }
 
+            var post = await postService.FindPostByIdAsync(postId);
             if (post == null)
             {
                 return NotFound("Post not found");
             }
 
+            // Check if user hasn't liked this post
             if (!post.LikedByUsers.Contains(userId))
             {
-                return BadRequest("User has not liked this post");
+                return Ok(new { message = "User hasn't liked this post", isLike = false, likes = post.Likes });
             }
 
-            post.LikedByUsers.Remove(userId);
-            post.Likes -= 1;
+            // Use the updated service method
+            bool success = await postService.UnlikePostAsync(postId, userId);
 
-            // Map Post sang PostDTO trước khi cập nhật
-            var updatedPostDTO = new PostDTO
+            if (!success)
             {
-                Content = post.Content,
-                CreatedAt = post.CreatedAt,
-                Likes = post.Likes,
-                LikedByUsers = post.LikedByUsers
-            };
-
-
-            bool isUpdated = await postService.UpdatePostAsync(postId, updatedPostDTO);
-
-            if (!isUpdated)
-            {
-                return StatusCode(500, "Failed to update the post");
+                return StatusCode(500, "Failed to unlike the post");
             }
+
+            // Fetch the updated post to return the latest like count
+            post = await postService.FindPostByIdAsync(postId);
 
             return Ok(new { message = "Post unliked successfully", isLike = false, likes = post.Likes });
         }

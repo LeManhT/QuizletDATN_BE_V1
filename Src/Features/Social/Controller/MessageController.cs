@@ -76,50 +76,62 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
             return NoContent();
         }
 
-        [HttpPost("group")]
-        public async Task<IActionResult> CreateGroupConversation([FromBody] CreateGroupConversationRequest request)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.Name))
-                {
-                    return BadRequest(new { success = false, message = "Group name cannot be empty" });
-                }
+        //[HttpPost("create-group")]
+        //public async Task<IActionResult> CreateGroupConversation([FromBody] CreateGroupRequest request)
+        //{
+        //    try
+        //    {
+        //        if (string.IsNullOrWhiteSpace(request.Name))
+        //            return BadRequest("Tên nhóm không được để trống");
 
-                if (request.Members == null || request.Members.Count < 2)
-                {
-                    return BadRequest(new { success = false, message = "A group must have at least two members" });
-                }
+        //        if (string.IsNullOrWhiteSpace(request.CreatorId))
+        //            return BadRequest("Phải có người tạo nhóm");
 
-                var newConversation = new Conversation
-                {
-                    ConversationId = Guid.NewGuid().ToString(),
-                    Name = request.Name,
-                    Members = request.Members.Distinct().ToList(),
-                    Type = request.Type,
-                    CreatedAt = TimeHelper.UnixTimeNow,
-                    LastMessage = string.Empty,
-                    LastMessageTime = 0
-                };
+        //        var members = request.Members?.Distinct().ToList()
+        //            ?? new List<GroupMember> { new GroupMember { UserId = request.CreatorId } };
 
-                await _messageService.SaveConversationAsync(newConversation);
+        //        if (!members.Any(m => m.UserId == request.CreatorId))
+        //            members.Add(new GroupMember { UserId = request.CreatorId });
 
-                return Ok(new
-                {
-                    success = true,
-                    message = "Group conversation created successfully",
-                    data = newConversation
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    success = false,
-                    error = ex.Message
-                });
-            }
-        }
+        //        var groupMembers = members.Select(id => new GroupMember
+        //        {
+        //            UserId = id,
+        //            JoinedAt = TimeHelper.UnixTimeNow,
+        //            Role = id == request.CreatorId ? "admin" : "member"
+        //        }).ToList();
+
+        //        var conversation = new Conversation
+        //        {
+        //            Name = request.Name,
+        //            Type = "group",
+        //            CreatorId = request.CreatorId,
+        //            Members = groupMembers,
+        //            Admins = new List<string> { request.CreatorId },
+        //            Description = request.Description,
+        //            GroupAvatar = request.GroupAvatar,
+        //            IsPublic = request.IsPublic,
+        //            MaxMembers = request.MaxMembers ?? 100,
+        //            JoinCode = GenerateUniqueJoinCode(),
+        //            CreatedAt = TimeHelper.UnixTimeNow,
+        //            UpdatedAt = TimeHelper.UnixTimeNow
+        //        };
+
+        //        await _messageService.SaveConversationAsync(conversation);
+
+        //        return Ok(new
+        //        {
+        //            message = "Tạo nhóm thành công",
+        //            conversationId = conversation.ConversationId,
+        //            joinCode = conversation.JoinCode
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        logger.LogError($"Lỗi tạo nhóm: {ex.Message}");
+        //        return StatusCode(500, "Có lỗi xảy ra khi tạo nhóm");
+        //    }
+        //}
+
 
         [HttpGet("GetUserConversations")]
         public async Task<IActionResult> GetUserConversations([FromQuery] string userId)
@@ -151,7 +163,6 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
                     return BadRequest(new { success = false, message = "Both user IDs are required." });
                 }
 
-                // Kiểm tra xem cuộc trò chuyện đã tồn tại chưa
                 var existingConversation = await _messageService.GetConversationAsync(request.UserId1, request.UserId2);
                 if (existingConversation != null)
                 {
@@ -163,12 +174,17 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
                     });
                 }
 
-                // Nếu chưa tồn tại, tạo mới conversation
+                var members = new List<GroupMember>
+        {
+            new GroupMember { UserId = request.UserId1, JoinedAt = TimeHelper.UnixTimeNow },
+            new GroupMember { UserId = request.UserId2, JoinedAt = TimeHelper.UnixTimeNow }
+        };
+
                 var newConversation = new Conversation
                 {
                     Name = $"Chat between {request.UserId1} and {request.UserId2}",
-                    Members = new List<string> { request.UserId1, request.UserId2 },
-                    Type = "private",
+                    Members = members,
+                    Type = "personal",
                     CreatedAt = TimeHelper.UnixTimeNow,
                     LastMessage = string.Empty,
                     LastMessageTime = 0
@@ -189,6 +205,7 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
                 return StatusCode(500, new { success = false, error = ex.Message });
             }
         }
+
 
 
 
@@ -233,52 +250,52 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
         }
 
 
-        // Tạo group mới
-        [HttpPost("create-group")]
-        public async Task<IActionResult> CreateGroupConversation([FromBody] CreateGroupRequest request)
-        {
-            try
-            {
-                // Validate input
-                if (string.IsNullOrWhiteSpace(request.Name))
-                    return BadRequest("Tên nhóm không được để trống");
+        //// Tạo group mới
+        //[HttpPost("create-group")]
+        //public async Task<IActionResult> CreateGroupConversation([FromBody] CreateGroupRequest request)
+        //{
+        //    try
+        //    {
+        //        // Validate input
+        //        if (string.IsNullOrWhiteSpace(request.Name))
+        //            return BadRequest("Tên nhóm không được để trống");
 
-                if (request.CreatorId == null)
-                    return BadRequest("Phải có người tạo nhóm");
+        //        if (request.CreatorId == null)
+        //            return BadRequest("Phải có người tạo nhóm");
 
-                // Tạo conversation mới
-                var conversation = new Conversation
-                {
-                    Name = request.Name,
-                    Type = "group",
-                    CreatorId = request.CreatorId,
-                    Members = new List<string> { request.CreatorId },
-                    Admins = new List<string> { request.CreatorId },
-                    Description = request.Description,
-                    GroupAvatar = request.GroupAvatar,
-                    IsPublic = request.IsPublic,
-                    MaxMembers = request.MaxMembers ?? 100,
-                    JoinCode = GenerateUniqueJoinCode()
-                };
+        //        // Tạo conversation mới
+        //        var conversation = new Conversation
+        //        {
+        //            Name = request.Name,
+        //            Type = "group",
+        //            CreatorId = request.CreatorId,
+        //            Members = new List<string> { request.CreatorId },
+        //            Admins = new List<string> { request.CreatorId },
+        //            Description = request.Description,
+        //            GroupAvatar = request.GroupAvatar,
+        //            IsPublic = request.IsPublic,
+        //            MaxMembers = request.MaxMembers ?? 100,
+        //            JoinCode = GenerateUniqueJoinCode()
+        //        };
 
-                // Lưu vào database
-                await _messageService.SaveConversationAsync(conversation);
+        //        // Lưu vào database
+        //        await _messageService.SaveConversationAsync(conversation);
 
-                return Ok(new
-                {
-                    message = "Tạo nhóm thành công",
-                    conversationId = conversation.ConversationId,
-                    joinCode = conversation.JoinCode
-                });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Lỗi tạo nhóm: {ex.Message}");
-                return StatusCode(500, "Có lỗi xảy ra khi tạo nhóm");
-            }
-        }
+        //        return Ok(new
+        //        {
+        //            message = "Tạo nhóm thành công",
+        //            conversationId = conversation.ConversationId,
+        //            joinCode = conversation.JoinCode
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        logger.LogError($"Lỗi tạo nhóm: {ex.Message}");
+        //        return StatusCode(500, "Có lỗi xảy ra khi tạo nhóm");
+        //    }
+        //}
 
-        // API thêm thành viên vào nhóm
+        // Thêm thành viên vào nhóm
         [HttpPost("{conversationId}/add-members")]
         public async Task<IActionResult> AddMembersToGroup(
             string conversationId,
@@ -286,39 +303,48 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
         {
             try
             {
-                // Validate
                 if (request.MemberIds == null || !request.MemberIds.Any())
                     return BadRequest("Danh sách thành viên trống");
 
-                // Kiểm tra conversation
                 var conversation = await _messageService.GetConversationByIdAsync(conversationId);
                 if (conversation == null)
                     return NotFound("Nhóm không tồn tại");
 
-                // Kiểm tra quyền
-                if (!conversation.Admins.Contains(request.RequestedById))
+                // Kiểm tra quyền theo cài đặt
+                var canAdd = conversation.PrivacySettings.WhoCanAddMembers == "all_members" ||
+                             (conversation.PrivacySettings.WhoCanAddMembers == "admins" &&
+                              conversation.Admins.Contains(request.RequestedById));
+
+                if (!canAdd)
                     return Forbid("Bạn không có quyền thêm thành viên");
 
                 // Kiểm tra giới hạn thành viên
                 if (conversation.Members.Count + request.MemberIds.Count > conversation.MaxMembers)
                     return BadRequest("Vượt quá số lượng thành viên cho phép");
 
-                // Lọc bỏ các thành viên đã có
-                var newMembers = request.MemberIds
-                    .Where(m => !conversation.Members.Contains(m) && !conversation.BannedMembers.Contains(m))
+                var existingIds = conversation.Members.Select(m => m.UserId).ToHashSet();
+                var bannedIds = conversation.BannedMembers.ToHashSet();
+
+                var newMemberIds = request.MemberIds
+                    .Where(id => !existingIds.Contains(id) && !bannedIds.Contains(id))
                     .ToList();
 
-                // Thêm thành viên
-                conversation.Members.AddRange(newMembers);
-                conversation.UpdatedAt = TimeHelper.UnixTimeNow;
+                foreach (var id in newMemberIds)
+                {
+                    conversation.Members.Add(new GroupMember
+                    {
+                        UserId = id,
+                        JoinedAt = TimeHelper.UnixTimeNow
+                    });
+                }
 
-                // Cập nhật database
+                conversation.UpdatedAt = TimeHelper.UnixTimeNow;
                 await _messageService.UpdateConversationAsync(conversation);
 
                 return Ok(new
                 {
-                    message = $"Đã thêm {newMembers.Count} thành viên",
-                    addedMembers = newMembers
+                    message = $"Đã thêm {newMemberIds.Count} thành viên",
+                    addedMembers = newMemberIds
                 });
             }
             catch (Exception ex)
@@ -328,7 +354,8 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
             }
         }
 
-        // API xóa thành viên khỏi nhóm
+
+        // Xóa thành viên khỏi nhóm
         [HttpDelete("{conversationId}/remove-member/{memberId}")]
         public async Task<IActionResult> RemoveMemberFromGroup(
             string conversationId,
@@ -341,16 +368,17 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
                 if (conversation == null)
                     return NotFound("Nhóm không tồn tại");
 
-                // Kiểm tra quyền (chỉ admin mới được xóa)
                 if (!conversation.Admins.Contains(requestedById))
                     return Forbid("Bạn không có quyền xóa thành viên");
 
-                // Không thể xóa admin
                 if (conversation.Admins.Contains(memberId))
                     return BadRequest("Không thể xóa quản trị viên");
 
-                // Xóa thành viên
-                conversation.Members.Remove(memberId);
+                var memberToRemove = conversation.Members.FirstOrDefault(m => m.UserId == memberId);
+                if (memberToRemove == null)
+                    return NotFound("Thành viên không tồn tại trong nhóm");
+
+                conversation.Members.Remove(memberToRemove);
                 conversation.UpdatedAt = TimeHelper.UnixTimeNow;
 
                 await _messageService.UpdateConversationAsync(conversation);
@@ -364,7 +392,8 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
             }
         }
 
-        // API quản lý admin
+
+        // Quản lý admin (thêm/xóa)
         [HttpPost("{conversationId}/manage-admin")]
         public async Task<IActionResult> ManageGroupAdmin(
             string conversationId,
@@ -376,22 +405,20 @@ namespace Quizlet_App_Server.Src.Features.Social.Controller
                 if (conversation == null)
                     return NotFound("Nhóm không tồn tại");
 
-                // Chỉ chủ sở hữu mới được quản lý admin
                 if (conversation.CreatorId != request.RequestedById)
                     return Forbid("Chỉ chủ nhóm mới được quản lý admin");
 
+                var isMember = conversation.Members.Any(m => m.UserId == request.UserId);
+                if (!isMember)
+                    return BadRequest("Người dùng phải là thành viên nhóm");
+
                 if (request.IsAddAdmin)
                 {
-                    // Thêm admin
-                    if (!conversation.Members.Contains(request.UserId))
-                        return BadRequest("Người dùng phải là thành viên nhóm");
-
                     if (!conversation.Admins.Contains(request.UserId))
                         conversation.Admins.Add(request.UserId);
                 }
                 else
                 {
-                    // Xóa admin
                     conversation.Admins.Remove(request.UserId);
                 }
 

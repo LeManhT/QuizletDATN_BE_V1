@@ -23,11 +23,11 @@
         public List<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
 
         [BsonElement("createdAt")]
-        [JsonIgnore]
+        //[JsonIgnore]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [BsonElement("updatedAt")]
-        [JsonIgnore]
+        //[JsonIgnore]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 

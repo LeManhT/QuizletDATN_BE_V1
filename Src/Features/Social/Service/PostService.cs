@@ -93,27 +93,51 @@ namespace Quizlet_App_Server.Src.Features.Social.Service
 
             return result.ModifiedCount > 0 ? newComment : null;
         }
+        // Add/modify these methods in the PostService class
 
         public async Task<bool> LikePostAsync(string postId, string userId)
         {
-            var update = Builders<Post>.Update.Inc(p => p.Likes, 1); 
-            var result = await _postCollection.UpdateOneAsync(
-                p => p.Id == postId,
-                update
-            );
-            return result.ModifiedCount > 0;
+            var post = await _postCollection.Find(p => p.Id == postId).FirstOrDefaultAsync();
+            if (post == null) return false;
+
+            // Only add the user if they haven't liked the post yet
+            if (!post.LikedByUsers.Contains(userId))
+            {
+                post.LikedByUsers.Add(userId);
+                post.Likes = post.LikedByUsers.Count; // Update likes count based on the array
+
+                var result = await _postCollection.ReplaceOneAsync(
+                    p => p.Id == postId,
+                    post
+                );
+                return result.ModifiedCount > 0;
+            }
+
+            // User already liked the post
+            return false;
         }
 
         public async Task<bool> UnlikePostAsync(string postId, string userId)
         {
-            var update = Builders<Post>.Update.Inc(p => p.Likes, -1);
-            var result = await _postCollection.UpdateOneAsync(
-                p => p.Id == postId,
-                update
-            );
-            return result.ModifiedCount > 0;
-        }
+            var post = await _postCollection.Find(p => p.Id == postId).FirstOrDefaultAsync();
+            if (post == null) return false;
 
+            // Only remove if the user has liked the post
+            if (post.LikedByUsers.Contains(userId))
+            {
+                post.LikedByUsers.Remove(userId);
+                post.Likes = post.LikedByUsers.Count; // Update likes count based on the array
+
+                var result = await _postCollection.ReplaceOneAsync(
+                    p => p.Id == postId,
+                    post
+                );
+                return result.ModifiedCount > 0;
+            }
+
+            // User hasn't liked the post
+            return false;
+        }
         // Quản lý bài viết của User
         //Mô tả: Lấy danh sách bài viết được tạo bởi một người dùng cụ thể.
         public async Task<List<Post>> GetPostsByUserAsync(string userId, int pageNumber, int pageSize)
@@ -146,6 +170,22 @@ namespace Quizlet_App_Server.Src.Features.Social.Service
             }
 
             return await _postCollection.Find(post => post.Id == postId).FirstOrDefaultAsync();
+        }
+
+        public async Task<List<string>> CheckLikedPostsAsync(string userId, List<string> postIds)
+        {
+            if (string.IsNullOrEmpty(userId) || postIds == null || !postIds.Any())
+            {
+                return new List<string>();
+            }
+
+            var filter = Builders<Post>.Filter.And(
+                Builders<Post>.Filter.In(p => p.Id, postIds),
+                Builders<Post>.Filter.AnyEq(p => p.LikedByUsers, userId)
+            );
+
+            var likedPosts = await _postCollection.Find(filter).ToListAsync();
+            return likedPosts.Select(p => p.Id).ToList();
         }
 
         public async Task<bool> UpdatePostAsync(string postId, PostDTO updatedPost)
