@@ -1,10 +1,18 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
+using Quizlet_App_Server.DataSettings;
 using Quizlet_App_Server.Src.Models;
 using Quizlet_App_Server.Src.Models.OtherFeature.Notification;
 using Quizlet_App_Server.Src.Services;
 using Quizlet_App_Server.Utility;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using Quizlet_App_Server.Src.DataSettings;
+using System.ComponentModel.DataAnnotations;
 
 namespace Quizlet_App_Server.Src.Controllers
 {
@@ -15,26 +23,31 @@ namespace Quizlet_App_Server.Src.Controllers
         protected readonly AdminService service;
         protected readonly IMongoCollection<Admin> collection;
         protected readonly IMongoClient client;
-        public AdminController(IMongoClient mongoClient, IConfiguration config)
+        private readonly AppConfigResource _appConfigResource;
+
+        public AdminController(IMongoClient mongoClient, IConfiguration config, AppConfigResource appConfigResource)
         {
             var database = mongoClient.GetDatabase(VariableConfig.DatabaseName);
             collection = database.GetCollection<Admin>(VariableConfig.Collection_Admin);
 
             this.client = mongoClient;
             this.service = new(mongoClient, config);
+            _appConfigResource = appConfigResource;
         }
+
         [HttpPost]
+        [AllowAnonymous]
         public ActionResult<Admin> SignUp([FromBody] AdminSignUp request)
         {
             Admin newAccount = new Admin()
             {
                 LoginName = request.LoginName,
-                LoginPassword = request.LoginPassword,
+                LoginPassword = request.LoginPassword, // Nên băm password
                 UserName = request.LoginName,
                 Email = request.Email
             };
 
-            // validate account
+            // Validate account
             var existingDocument = service.FindByLoginName(newAccount.LoginName);
 
             if (existingDocument != null)
@@ -45,28 +58,38 @@ namespace Quizlet_App_Server.Src.Controllers
             collection.InsertOne(newAccount);
             return Ok(newAccount);
         }
+
         [HttpPost]
-        public ActionResult<Admin> Login(string loginName, string password)
+        [AllowAnonymous]
+        public IActionResult Login([FromBody] LoginRequest request)
         {
-            Admin existingAccount = service.FindByLoginName(loginName);
+            if (string.IsNullOrEmpty(request.LoginName) || string.IsNullOrEmpty(request.Password))
+            {
+                return BadRequest("Login name or password is empty");
+            }
+
+            Admin existingAccount = service.FindByLoginName(request.LoginName);
 
             if (existingAccount == null)
             {
                 return NotFound("Login name not found");
             }
 
-            if(!existingAccount.LoginPassword.Equals(password))
+            if (!existingAccount.LoginPassword.Equals(request.Password))
             {
                 return BadRequest("Password incorrect");
             }
 
-            return Ok(existingAccount);
+            // Tạo JWT
+            var token = GenerateJwtToken(existingAccount);
+            return Ok(new { Token = token });
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public ActionResult<List<User>> GetUsers(int from, int to)
         {
-            if(to < from)
+            if (to < from)
             {
                 return BadRequest("Input incorrect!");
             }
@@ -76,6 +99,7 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public ActionResult<Dictionary<string, int>> GetChartUsersCreateByMonth()
         {
             try
@@ -99,11 +123,12 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public ActionResult SetSuspendUser(string userID, bool suspend)
         {
             bool updated = service.SetSuspendUser(userID, suspend);
 
-            if(!updated)
+            if (!updated)
             {
                 return BadRequest("User suspend not updated");
             }
@@ -112,11 +137,12 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public ActionResult PingNoticeUser(string userID, Notification notice)
         {
             var updateResult = service.PingNoticeUser(userID, notice);
 
-            if(updateResult.ModifiedCount <= 0)
+            if (updateResult.ModifiedCount <= 0)
             {
                 return BadRequest("Push notification failed!");
             }
@@ -125,6 +151,7 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public ActionResult PingNoticeForAllUsers(Notification notice)
         {
             var updateResult = service.PingNoticeAllUsers(notice);
@@ -138,16 +165,100 @@ namespace Quizlet_App_Server.Src.Controllers
         }
 
         [HttpDelete]
+        [Authorize(Roles = "Admin")]
         public ActionResult DeleteUser(string userID)
         {
-            var delteResult = service.DeleteUser(userID);
+            var deleteResult = service.DeleteUser(userID);
 
-            if(delteResult.DeletedCount <= 0)
+            if (deleteResult.DeletedCount <= 0)
             {
                 return BadRequest("User not found");
             }
 
             return Ok("User was be deleted");
         }
+
+        private string GenerateJwtToken(Admin admin)
+        {
+            var jwtConfig = _appConfigResource.Jwt;
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Name, admin.LoginName),
+                new Claim(ClaimTypes.Role, "Admin"),
+                new Claim(JwtRegisteredClaimNames.Sub, admin.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: jwtConfig.Issuer,
+                audience: jwtConfig.Audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(jwtConfig.TokenValidityMins),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public ActionResult UpdateUser([FromBody] UpdateUserRequest request)
+        {
+            if (string.IsNullOrEmpty(request.UserID))
+            {
+                return BadRequest("UserID is required");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var updateModel = new UserUpdateModel
+            {
+                LoginName = request.LoginName,
+                LoginPassword = request.LoginPassword,
+                UserName = request.UserName,
+                Email = request.Email,
+                DateOfBirth = request.DateOfBirth
+            };
+
+            bool updated = service.UpdateUser(request.UserID, updateModel);
+
+            if (!updated)
+            {
+                return BadRequest("User not found or update failed");
+            }
+
+            return Ok("User updated successfully");
+        }
+    }
+
+    public class LoginRequest
+    {
+        public string LoginName { get; set; }
+        public string Password { get; set; }
+    }
+
+    public class AdminSignUp
+    {
+        public string LoginName { get; set; }
+        public string LoginPassword { get; set; }
+        public string Email { get; set; }
+    }
+
+    public class UpdateUserRequest
+    {
+        [Required]
+        public string UserID { get; set; }
+        public string LoginName { get; set; }
+        public string LoginPassword { get; set; }
+        public string UserName { get; set; }
+        [EmailAddress]
+        public string Email { get; set; }
+        public string DateOfBirth { get; set; }
     }
 }

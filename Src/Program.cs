@@ -123,7 +123,9 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "http://127.0.0.1:5500",         // Nếu dùng trình duyệt trên máy cục bộ
             "http://10.0.2.2:5500",          // Trình giả lập Android
-            "http://192.168.1.100:5500" // IP của máy chủ trong mạng LAN
+            "http://192.168.1.100:5500", // IP của máy chủ trong mạng LAN
+            "http://localhost:3000",
+            "http://192.168.240.1:3000"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()

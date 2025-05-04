@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Quizlet_App_Server.Src.Models;
 using Quizlet_App_Server.Src.Models.OtherFeature.Notification;
@@ -116,5 +117,58 @@ namespace Quizlet_App_Server.Src.Services
 
             return result.ToList();
         }
+
+        public bool UpdateUser(string userID, UserUpdateModel updateModel)
+        {
+            if (string.IsNullOrEmpty(userID))
+            {
+                return false;
+            }
+
+            var filter = Builders<User>.Filter.Eq(x => x.Id, userID);
+            var updateDefinition = Builders<User>.Update.Combine();
+
+            if (!string.IsNullOrEmpty(updateModel.LoginName))
+            {
+                updateDefinition = updateDefinition.Set(x => x.LoginName, updateModel.LoginName);
+            }
+
+            if (!string.IsNullOrEmpty(updateModel.LoginPassword))
+            {
+                updateDefinition = updateDefinition.Set(x => x.LoginPassword, updateModel.LoginPassword);
+            }
+
+            if (!string.IsNullOrEmpty(updateModel.UserName))
+            {
+                updateDefinition = updateDefinition.Set(x => x.UserName, updateModel.UserName);
+            }
+
+            if (!string.IsNullOrEmpty(updateModel.Email))
+            {
+                updateDefinition = updateDefinition.Set(x => x.Email, updateModel.Email);
+            }
+
+            if (!string.IsNullOrEmpty(updateModel.DateOfBirth))
+            {
+                updateDefinition = updateDefinition.Set(x => x.DateOfBirth, updateModel.DateOfBirth);
+            }
+
+            var options = new FindOneAndUpdateOptions<User>
+            {
+                ReturnDocument = ReturnDocument.After
+            };
+
+            var result = user_collection.FindOneAndUpdate(filter, updateDefinition, options);
+            return result != null;
+        }
+    }
+
+    public class UserUpdateModel
+    {
+        public string LoginName { get; set; }
+        public string LoginPassword { get; set; }
+        public string UserName { get; set; }
+        public string Email { get; set; }
+        public string DateOfBirth { get; set; }
     }
 }
