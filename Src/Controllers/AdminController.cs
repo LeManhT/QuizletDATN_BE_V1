@@ -13,8 +13,6 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Quizlet_App_Server.Src.DataSettings;
 using System.ComponentModel.DataAnnotations;
-using MongoDB.Bson.Serialization.Attributes;
-using MongoDB.Bson;
 using Quizlet_App_Server.Src.Features.Social.Models;
 
 namespace Quizlet_App_Server.Src.Controllers
