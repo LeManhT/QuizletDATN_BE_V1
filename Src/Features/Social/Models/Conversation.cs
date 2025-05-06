@@ -72,6 +72,9 @@ namespace Quizlet_App_Server.Src.Features.Social.Models
         // Cài đặt quyền riêng tư và thông báo
         [BsonElement("privacy_settings")]
         public ConversationPrivacySettings PrivacySettings { get; set; } = new ConversationPrivacySettings();
+
+        [BsonElement("participants")]
+        public List<string>? Participants { get; set; }
     }
 
     // Lớp con để quản lý cài đặt riêng tư
