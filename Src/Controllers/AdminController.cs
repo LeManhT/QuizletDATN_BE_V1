@@ -13,6 +13,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Quizlet_App_Server.Src.DataSettings;
 using System.ComponentModel.DataAnnotations;
+using Quizlet_App_Server.Src.Features.Social.Models;
 
 namespace Quizlet_App_Server.Src.Controllers
 {
@@ -235,6 +236,66 @@ namespace Quizlet_App_Server.Src.Controllers
 
             return Ok("User updated successfully");
         }
+
+        [HttpGet("attachments")]
+        [Authorize(Roles = "Admin")]
+        public ActionResult<List<MessageAttachmentDto>> GetAttachmentsByConversation(string conversationId)
+        {
+            var db = client.GetDatabase(VariableConfig.DatabaseName);
+            var messageCollection = db.GetCollection<Message>("messages");
+
+            var filter = Builders<Message>.Filter.And(
+                Builders<Message>.Filter.Eq(x => x.ConversationId, conversationId),
+                Builders<Message>.Filter.Eq(x => x.IsDeleted, false)
+            );
+
+            var result = messageCollection.Find(filter).ToList();
+
+            var attachmentsWithMessageId = result
+                .SelectMany(msg => (msg.Attachments ?? new List<Attachment>())
+                    .Select(att => new MessageAttachmentDto
+                    {
+                        MessageId = msg.MessageId,
+                        Attachment = att
+                    }))
+                .ToList();
+
+            return Ok(attachmentsWithMessageId);
+        }
+
+
+        [HttpDelete("attachments")]
+        [Authorize(Roles = "Admin")]
+        public ActionResult DeleteAttachmentFromMessage(string messageId, string attachmentUrl)
+        {
+            var db = client.GetDatabase(VariableConfig.DatabaseName);
+            var messageCollection = db.GetCollection<Message>("messages");
+
+            var filter = Builders<Message>.Filter.Eq(x => x.MessageId, messageId);
+            var update = Builders<Message>.Update.PullFilter("attachments",
+                Builders<Attachment>.Filter.Eq("url", attachmentUrl));
+
+            var result = messageCollection.UpdateOne(filter, update);
+
+            if (result.ModifiedCount == 0)
+                return NotFound("Attachment not found or already deleted.");
+
+            return Ok("Attachment deleted successfully.");
+        }
+
+
+        [HttpGet("all")]
+        [Authorize(Roles = "Admin")]
+        public ActionResult<List<Conversation>> GetAllConversations()
+        {
+            var db = client.GetDatabase(VariableConfig.DatabaseName);
+            var conversationCollection = db.GetCollection<Conversation>("conversation");
+
+            var filter = Builders<Conversation>.Filter.Eq(x => x.IsDeleted, false);
+            var result = conversationCollection.Find(filter).SortByDescending(c => c.LastMessageTime).ToList();
+
+            return Ok(result);
+        }
     }
 
     public class LoginRequest
@@ -261,4 +322,11 @@ namespace Quizlet_App_Server.Src.Controllers
         public string Email { get; set; }
         public string DateOfBirth { get; set; }
     }
+
+    public class MessageAttachmentDto
+    {
+        public string MessageId { get; set; }
+        public Attachment Attachment { get; set; }
+    }
+
 }
